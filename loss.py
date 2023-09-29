@@ -69,6 +69,7 @@ class Loss_CategoricalCrossentropy(Loss):
         # normalize gradient
         self.dinputs /= samples
 
+# Binary Crossentropy
 class Loss_BinaryCrossentropy(Loss):
 
     def forward(self, y_pred, y_true):
@@ -89,4 +90,30 @@ class Loss_BinaryCrossentropy(Loss):
         # gradient calc
         self.dinputs = -(y_true / clipped_dvalues - (1 - y_true) / (1 - clipped_dvalues)) / outputs
         # normalize gradient
+        self.dinputs /= samples
+
+# Mean Squared Error
+class Loss_MeanSquaredError(Loss):
+    def forward(self, y_pred, y_true):
+        samples_losses = np.mean((y_true - y_pred) ** 2, axis=-1)
+        return samples_losses
+    
+    def backward(self, dvalues, y_true):
+        samples = len(dvalues)
+        outputs = len(dvalues[0])
+
+        self.dinputs = -2 * (y_true - dvalues) / outputs
+        self.dinputs /= samples
+
+# Mean Absolute Error
+class Loss_MeanAbsoluteError(Loss):
+    def forward(self, y_pred, y_true):
+        samples_losses = np.mean(np.abs(y_true - y_pred), axis=-1)
+        return samples_losses
+    
+    def backward(self, dvalues, y_true):
+        samples = len(dvalues)
+        outputs = len(dvalues[0])
+
+        self.dinputs = np.sign(y_true - dvalues) / outputs
         self.dinputs /= samples
