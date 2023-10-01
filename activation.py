@@ -5,7 +5,7 @@ from loss import Loss_CategoricalCrossentropy
 class Activation_ReLU:
 
     # ouputs values are zero for negative inputs 
-    def forward(self, inputs):
+    def forward(self, inputs, training):
         self.inputs = inputs
         self.output = np.maximum(0, inputs)
 
@@ -15,14 +15,19 @@ class Activation_ReLU:
         self.dinputs = dvalues.copy()
 
         # make negative values have zero gradient
-        self.dinputs[self.inputs < 0] = 0
+        self.dinputs[self.inputs <= 0] = 0
 
+    # calculates predictions for outputs
+    def predictions(self, outputs):
+        return outputs
 
 # Softmax Activation
 class Activation_Softmax:
 
     # forward pass
-    def forward(self, inputs):
+    def forward(self, inputs, training):
+        self.inputs = inputs
+
         # get the unnormalized probabilities
         exp_values = np.exp(inputs - np.max(inputs, axis=1, keepdims=True))
         # normalize them for each sample
@@ -45,25 +50,13 @@ class Activation_Softmax:
             # calculate sample-wise gradient and add it to the array of sample gradients
             self.dinputs[index] = np.dot(jacobian_matrix, single_values)
 
+    # calculates predictions for outputs
+    def predictions(self, outputs):
+        return np.argmax(outputs, axis=1)
+
 # Softmax Classifier - combined softmax activation and cross entropy loss
 # for faster backward pass
 class Activation_Softmax_Loss_CategoricalCrossentropy():
-
-    # creates activation and loss function objects
-    def __init__(self):
-        self.activation = Activation_Softmax()
-        self.loss = Loss_CategoricalCrossentropy()
-
-    # forward pass
-    def forward(self, inputs, y_true):
-        # output layer's activation function
-        self.activation.forward(inputs)
-
-        # set the output
-        self.output = self.activation.output
-
-        # calculate and return loss
-        return self.loss.calculate(self.output, y_true)
     
     # backward pass
     def backward(self, dvalues, y_true):
@@ -82,7 +75,7 @@ class Activation_Softmax_Loss_CategoricalCrossentropy():
         self.dinputs = self.dinputs / samples
 
 class Activation_Sigmoid:
-    def forward(self, inputs):
+    def forward(self, inputs, training):
         self.inputs = inputs
         self.output = 1 / (1 + np.exp(-inputs))
 
@@ -90,10 +83,16 @@ class Activation_Sigmoid:
         # derivative calc of output from sigmoid function
         self.dinputs = dvalues * (1 - self.output) * self.output
 
+    def predictions(self, outputs):
+        return (outputs > 0.5) * 1
+
 class Activation_Linear:
-    def forward(self, inputs):
+    def forward(self, inputs, training):
         self.inputs = inputs
         self.output = inputs
 
     def backward(self, dvalues):
         self.dinputs = dvalues.copy()
+
+    def predictions(self, outputs):
+        return outputs

@@ -9,7 +9,7 @@ class Layer_Dense:
                  bias_regularizer_l1=0, bias_regularizer_l2=0):
         
         # initialize weights and biases
-        self.weights = 0.1 * np.random.randn(n_inputs, n_neurons)
+        self.weights = 0.01 * np.random.randn(n_inputs, n_neurons)
         self.biases = np.zeros((1, n_neurons))
 
         # set regularization strength
@@ -19,7 +19,7 @@ class Layer_Dense:
         self.bias_regularizer_l2 = bias_regularizer_l2
 
     # forward pass 
-    def forward(self, inputs):
+    def forward(self, inputs, training):
         # calculate output values from inputs
         self.inputs = inputs
         self.output = np.dot(inputs, self.weights) + self.biases
@@ -63,8 +63,12 @@ class Layer_Dropout:
         self.rate = 1 - rate
 
     # forward pass
-    def forward(self, inputs):
+    def forward(self, inputs, training):
         self.inputs = inputs
+
+        if not training:
+            self.output = inputs.copy()
+            return
 
         # create scaled mask
         self.binary_mask = np.random.binomial(1, self.rate, size=inputs.shape) / self.rate
@@ -76,4 +80,11 @@ class Layer_Dropout:
     def backward(self, dvalues):
         # gradient on values
         self.dinputs = dvalues * self.binary_mask
+
+
+# Input layer class
+class Layer_Input:
+    def forward(self, inputs, training):
+        self.output = inputs
+
     
